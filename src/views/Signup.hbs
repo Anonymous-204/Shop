@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Đăng ký | MyShop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --text-color: #1e293b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    /* NỀN GRADIENT ĐỘNG Y HỆT TRANG ĐĂNG NHẬP */
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* CÁC KHỐI BLOB BAY PHÍA SAU */
+    .blob {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      z-index: -1;
+      filter: blur(80px);
+      animation: move 20s infinite alternate;
+    }
+    .blob:nth-child(1) { top: -10%; left: -10%; background: #ff0080; }
+    .blob:nth-child(2) { bottom: -10%; right: -10%; background: #00ffff; }
+
+    @keyframes move {
+      from { transform: translate(0, 0); }
+      to { transform: translate(100px, 100px); }
+    }
+
+    /* CARD HIỆU ỨNG KÍNH MỜ */
+    .card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 30px 40px;
+      width: 90%;
+      max-width: 420px;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      color: var(--text-color);
+      animation: cardFadeIn 0.5s ease-out;
+    }
+
+    @keyframes cardFadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .logo-container {
+      width: 50px;
+      height: 50px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 15px;
+      font-size: 20px;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      letter-spacing: -1px;
+    }
+
+    p.sub {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    .field {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+      padding-left: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.5);
+      color: var(--text-color);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      background: white;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    /* NÚT BẤM GRADIENT */
+    button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: white;
+      background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+      background-size: 200% auto;
+      cursor: pointer;
+      transition: 0.5s;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    button:hover {
+      background-position: right center;
+      transform: translateY(-2px);
+      box-shadow: 0 15px 25px rgba(0, 198, 255, 0.3);
+    }
+
+    .message {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      border-radius: 8px;
+      min-height: 1em;
+    }
+    .message.error { color: #e11d48; background: rgba(255, 255, 255, 0.5); padding: 8px; }
+    .message.success { color: #059669; background: rgba(255, 255, 255, 0.5); padding: 8px; }
+
+    .link {
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .link a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob"></div>
+  <div class="blob"></div>
+
+  <div class="card">
+    <div class="logo-container">✨</div>
+    <h1>Tham gia ngay</h1>
+    <p class="sub">Khởi tạo hành trình của bạn</p>
+
+    <form id="register-form">
+      <div class="field">
+        <label for="username">Tên hiển thị</label>
+        <input id="username" name="username" type="text" placeholder="Bạn tên là gì?" required />
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="email@vi-du.com" required />
+      </div>
+
+      <div class="field">
+        <label for="password">Mật khẩu</label>
+        <input id="password" name="password" type="password" placeholder="••••••••" required />
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">Xác nhận mật khẩu</label>
+        <input id="confirmPassword" name="confirmPassword" type="password" placeholder="••••••••" required />
+      </div>
+
+      <button type="submit">Đăng ký tài khoản</button>
+    </form>
+
+    <div id="message" class="message"></div>
+    
+    <div class="link">
+      Bạn đã có tài khoản? <a href="/signin">Đăng nhập</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('register-form');
+    const messageEl = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      messageEl.textContent = '';
+      messageEl.className = 'message';
+
+      const username = form.username.value.trim();
+      const email = form.email.value.trim();
+      const password = form.password.value;
+      const confirmPassword = form.confirmPassword.value;
+
+      if (password !== confirmPassword) {
+        messageEl.textContent = 'Mật khẩu xác nhận không khớp';
+        messageEl.classList.add('error');
+        return;
+      }
+
+      const payload = { username, email, password };
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          messageEl.textContent = data.message;
+          messageEl.classList.add('error');
+          return;
+        }
+
+        messageEl.textContent = "Chào mừng tân binh! Đang chuyển hướng...";
+        messageEl.classList.add('success');
+        
+        setTimeout(() => {
+            window.location.href = "/signin";
+        }, 1000);
+        
+      } catch {
+        messageEl.textContent = 'Lỗi kết nối tới server';
+        messageEl.classList.add('error');
+      }
+    });
+  </script>
+</body>
+</html>

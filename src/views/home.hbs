@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trang chủ</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+
+    body {
+      background: #f8fafc;
+      padding: 30px;
+      margin: 0;
+      color: #1e293b;
+    }
+
+    h2 { 
+      margin-bottom: 25px; 
+      margin-top: 35px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #0f172a;
+      border-left: 4px solid #3b82f6;
+      padding-left: 15px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    /* ===== PRODUCT CARD ===== */
+    .product-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all .25s ease;
+      position: relative;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+      border-color: #3b82f6;
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      background: #f1f5f9;
+    }
+
+    .product-body {
+      padding: 16px;
+    }
+
+    .product-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: #1e293b;
+    }
+
+    .price {
+      color: #ef4444;
+      font-weight: 800;
+      font-size: 1.1em;
+      margin-bottom: 8px;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    /* ===== CART OVERLAY (GÓC DƯỚI PHẢI) ===== */
+    .cart-overlay {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #fff;
+      padding: 4px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      border: 1px solid #e2e8f0;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .product-card:hover .cart-overlay {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    .cart-btn {
+      background: #f1f5f9;
+      border: none;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.2s;
+    }
+
+    .cart-btn:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .cart-qty {
+      min-width: 25px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .cart-submit {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .cart-submit:hover { background: #16a34a; }
+    .cart-submit.disabled { opacity: 0.3; pointer-events: none; }
+
+    /* ===== MODAL DETAIL (PHONG CÁCH SANG TRỌNG) ===== */
+    #productModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #modalBlur {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+    }
+
+    #modalContent {
+      position: relative;
+      background: #fff;
+      width: 90%;
+      max-width: 850px;
+      max-height: 85vh;
+      border-radius: 16px;
+      overflow-y: auto;
+      padding: 0; /* padding được đưa vào trong body để đẹp hơn */
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      animation: modalSlideUp 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 30px;
+      cursor: pointer;
+      color: #64748b;
+      z-index: 10;
+      line-height: 1;
+    }
+
+    .modal-body-content {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 0;
+    }
+
+    @media (max-width: 768px) {
+      .modal-body-content { grid-template-columns: 1fr; }
+    }
+
+    .modal-img-container {
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-img {
+      width: 100%;
+      border-radius: 12px;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .modal-info-container {
+      padding: 40px;
+    }
+
+    .detail-label {
+      font-weight: 700;
+      color: #64748b;
+      margin-top: 20px;
+      display: block;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+
+    .detail-val {
+      color: #334155;
+      margin-bottom: 4px;
+      line-height: 1.6;
+    }
+
+    .detail-price {
+      font-size: 32px;
+      color: #ef4444;
+      font-weight: 800;
+      margin: 10px 0 20px 0;
+    }
+
+    .description-box {
+      background: #f1f5f9;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    /* Scrollbar */
+    #modalContent::-webkit-scrollbar { width: 8px; }
+    #modalContent::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  </style>
+</head>
+
+<body>
+  <h2>🛒 Danh mục sản phẩm</h2>
+  <div id="productGrid" class="grid"></div>
+
+  <div id="productModal">
+    <div id="modalBlur" onclick="closeDetail()"></div>
+    <div id="modalContent">
+      <span class="close-modal" onclick="closeDetail()">&times;</span>
+      <div id="modalBody">
+         </div>
+    </div>
+  </div>
+
+<script>
+/* ================= AUTH & FETCH ================= */
+const Auth = {
+  accessToken: null,
+  async refresh() {
+    const res = await fetch('/api/auth/refreshToken', { method: 'POST', credentials: 'include' });
+    if (!res.ok) throw new Error('NOT_LOGIN');
+    const data = await res.json();
+    this.accessToken = data.accessToken;
+  },
+  async verify() {
+    const res = await fetch('/api/user/me', { headers: { Authorization: `Bearer ${this.accessToken}` } });
+    if (!res.ok) throw new Error('INVALID_TOKEN');
+  },
+  async init() {
+    if (this.accessToken) return;
+    try { await this.refresh(); await this.verify(); } catch (e) {}
+  }
+};
+
+async function apiFetch(url, options = {}) {
+  if (!Auth.accessToken) await Auth.init();
+  const res = await fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${Auth.accessToken}` } });
+  if (res.status === 401 || res.status === 403) { Auth.accessToken = null; throw new Error('NOT_LOGIN'); }
+  return res;
+}
+
+/* ================= HOME LOGIC ================= */
+const grid = document.getElementById('productGrid');
+const modal = document.getElementById('productModal');
+const modalBody = document.getElementById('modalBody');
+
+function renderProducts(products) {
+  if (!products || products.length === 0) {
+    grid.innerHTML = `<div class="empty">Trống rỗng...</div>`;
+    return;
+  }
+
+  grid.innerHTML = products.map(p => `
+    <div class="product-card" onclick="goDetail(${p.id})">
+      <img src="${p.image || 'https://via.placeholder.com/400x300'}">
+      <div class="product-body">
+        <div class="product-name">${p.name}</div>
+        <div class="price">${Number(p.price).toLocaleString()}₫</div>
+        <div class="meta">Tồn kho: ${p.stock}</div>
+      </div>
+      <div class="cart-overlay" data-id="${p.id}" data-stock="${p.stock}">
+        <button class="cart-btn" onclick="decQty(event)">-</button>
+        <div class="cart-qty">0</div>
+        <button class="cart-btn" onclick="incQty(event)">+</button>
+        <button class="cart-btn cart-submit disabled" onclick="addToCart(event)">V</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function goDetail(id) {
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  modalBody.innerHTML = '<div style="padding:40px; text-align:center">⏳ Đang tải dữ liệu...</div>';
+
+  try {
+    const res = await fetch(`/api/product/${id}`);
+    if(!res.ok) throw new Error('Không tìm thấy sản phẩm');
+    const p = await res.json();
+
+    modalBody.innerHTML = `
+      <div class="modal-body-content">
+        <div class="modal-img-container">
+          <img src="${p.image || 'https://via.placeholder.com/400x300'}" class="modal-img">
+        </div>
+        <div class="modal-info-container">
+          <h1 style="margin:0; font-size: 24px; color: #0f172a;">${p.name}</h1>
+          <div class="detail-price">${Number(p.price).toLocaleString()}₫</div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+            <div>
+              <span class="detail-label">Thương hiệu</span>
+              <div class="detail-val"><b>${p.brand_name || 'N/A'}</b></div>
+            </div>
+            <div>
+              <span class="detail-label">Danh mục</span>
+              <div class="detail-val"><b>${p.category_name || 'N/A'}</b></div>
+            </div>
+          </div>
+
+          <span class="detail-label">Mô tả sản phẩm</span>
+          <div class="detail-val description-box">${p.description || 'Không có mô tả.'}</div>
+          
+          <span class="detail-label">Thông số kỹ thuật</span>
+          <div class="detail-val" style="font-size: 14px; font-family: monospace;">${p.specification || 'Đang cập nhật...'}</div>
+          
+          <span class="detail-label">Cập nhật lần cuối</span>
+          <div class="detail-val" style="font-size: 12px;">${new Date(p.updated_at).toLocaleString('vi-VN')}</div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    modalBody.innerHTML = `<div style="padding:40px; color:red">Lỗi: ${err.message}</div>`;
+  }
+}
+
+function closeDetail() {
+  modal.style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+
+/* ================= CART LOGIC ================= */
+function incQty(e) {
+  e.stopPropagation();
+  const overlay = e.target.closest('.cart-overlay');
+  const stock = Number(overlay.dataset.stock);
+  const qtyEl = overlay.querySelector('.cart-qty');
+  const submitBtn = overlay.querySelector('.cart-submit');
+  let qty = Number(qtyEl.textContent);
+  if (qty < stock) qty++;
+  qtyEl.textContent = qty;
+  submitBtn.classList.toggle('disabled', qty === 0);
+}
+
+function decQty(e) {
+  e.stopPropagation();
+  const overlay = e.target.closest('.cart-overlay');
+  const qtyEl = overlay.querySelector('.cart-qty');
+  const submitBtn = overlay.querySelector('.cart-submit');
+  let qty = Number(qtyEl.textContent);
+  if (qty > 0) qty--;
+  qtyEl.textContent = qty;
+  submitBtn.classList.toggle('disabled', qty === 0);
+}
+
+async function addToCart(e) {
+  e.stopPropagation();
+  const overlay = e.target.closest('.cart-overlay');
+  const productId = Number(overlay.dataset.id);
+  const qty = Number(overlay.querySelector('.cart-qty').textContent);
+  if (qty === 0) return;
+
+  try { await Auth.init(); } catch {
+    alert('🔐 Vui lòng đăng nhập!');
+    return;
+  }
+
+  try {
+    const res = await apiFetch('/api/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, quantity: qty })
+    });
+    if (!res.ok) throw new Error();
+    overlay.querySelector('.cart-qty').textContent = 0;
+    overlay.querySelector('.cart-submit').classList.add('disabled');
+    alert('✅ Đã thêm vào giỏ hàng');
+  } catch (err) {
+    alert('❌ Lỗi thêm giỏ hàng');
+  }
+}
+
+async function loadProducts() {
+  grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px">⏳ Đang tải sản phẩm...</div>';
+  try {
+    const res = await fetch('/api/product/all');
+    const products = await res.json();
+    renderProducts(products);
+  } catch (e) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px">Không thể kết nối máy chủ</div>';
+  }
+}
+
+loadProducts();
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Đăng nhập | MyShop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --text-color: #1e293b;
+      --primary-gradient: linear-gradient(135deg, #6dd5ed, #2193b0);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    /* NỀN ĐỔI MÀU ĐỘNG */
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      /* Gradient di chuyển */
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* TRANG TRÍ CÁC KHỐI TRÒN BAY PHÍA SAU (BLOB) */
+    .blob {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      z-index: -1;
+      filter: blur(80px);
+      animation: move 20s infinite alternate;
+    }
+    .blob:nth-child(1) { top: -10%; left: -10%; background: #ff0080; }
+    .blob:nth-child(2) { bottom: -10%; right: -10%; background: #00ffff; }
+
+    @keyframes move {
+      from { transform: translate(0, 0); }
+      to { transform: translate(100px, 100px); }
+    }
+
+    /* CARD HIỆU ỨNG KÍNH MỜ (GLASSMORPHISM) */
+    .card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 40px;
+      width: 90%;
+      max-width: 420px;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      color: var(--text-color);
+    }
+
+    .logo-container {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 24px;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+
+    p.sub {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-bottom: 30px;
+    }
+
+    .field {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      padding-left: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.5);
+      color: var(--text-color);
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      background: white;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    /* NÚT BẤM GRADIENT RỰC RỠ */
+    button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 15px;
+      border-radius: 14px;
+      border: none;
+      font-weight: 700;
+      font-size: 1rem;
+      color: white;
+      background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+      background-size: 200% auto;
+      cursor: pointer;
+      transition: 0.5s;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    button:hover {
+      background-position: right center;
+      transform: translateY(-2px);
+      box-shadow: 0 15px 25px rgba(0, 198, 255, 0.3);
+    }
+
+    button:disabled {
+      filter: grayscale(1);
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin-top: 15px;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      padding: 0;
+      transition: 0.3s;
+    }
+
+    .message.error { color: #e11d48; background: rgba(255, 255, 255, 0.5); padding: 10px; }
+    .message.success { color: #059669; background: rgba(255, 255, 255, 0.5); padding: 10px; }
+
+    .link {
+      margin-top: 25px;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .link a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob"></div>
+  <div class="blob"></div>
+
+  <div class="card">
+    <div class="logo-container">🛒</div>
+    <h1>Chào mừng trở lại</h1>
+    <p class="sub">Vui lòng đăng nhập để tiếp tục khám phá</p>
+
+    <form id="login-form">
+      <div class="field">
+        <label for="username">Tên người dùng</label>
+        <input id="username" name="username" type="text" placeholder="Tên của bạn..." required />
+      </div>
+
+      <div class="field">
+        <label for="password">Mật khẩu</label>
+        <input id="password" name="password" type="password" placeholder="••••••••" required />
+      </div>
+
+      <button type="submit" id="login-btn">Đăng nhập ngay</button>
+    </form>
+
+    <div id="message" class="message"></div>
+
+    <div class="link">
+      Chưa có tài khoản? <a href="/signup">Tham gia ngay</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("login-form");
+    const messageEl = document.getElementById("message");
+    const button = document.getElementById("login-btn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      messageEl.textContent = "";
+      messageEl.className = "message";
+      button.disabled = true;
+
+      const username = form.username.value.trim();
+      const password = form.password.value;
+
+      try {
+        const res = await fetch("/api/auth/signin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+          let msg = "Đăng nhập thất bại";
+          try {
+            const data = await res.json();
+            if (data?.message) msg = data.message;
+          } catch (_) {}
+          messageEl.textContent = msg;
+          messageEl.classList.add("error");
+          button.disabled = false;
+          return;
+        }
+
+        messageEl.textContent = "Đăng nhập thành công! Đang chuyển hướng...";
+        messageEl.classList.add("success");
+
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 800);
+
+      } catch (err) {
+        messageEl.textContent = "Lỗi kết nối server.";
+        messageEl.classList.add("error");
+        button.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>

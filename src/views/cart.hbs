@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Giỏ hàng - Cửa hàng</title>
+
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --danger: #ef4444;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bg: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 50px auto;
+      padding: 0 20px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cart-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 30px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .cart-wrapper { grid-template-columns: 1fr; }
+    }
+    .cart-list {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .item {
+      display: grid;
+      grid-template-columns: 100px 1fr auto;
+      gap: 20px;
+      padding: 20px;
+      border-bottom: 1px solid #f1f5f9;
+      align-items: center;
+    }
+    .item img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .info .name {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .info .meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .info .price {
+      color: var(--danger);
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .qty-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 15px;
+    }
+    .qty-input {
+      display: flex;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .qty-input button {
+      border: none;
+      width: 30px;
+      cursor: pointer;
+    }
+    .qty-input span {
+      width: 40px;
+      text-align: center;
+      font-weight: 600;
+    }
+    .remove-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .summary-card {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 20px;
+    }
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #f1f5f9;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .checkout-btn {
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .checkout-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .clear-btn {
+      width: 100%;
+      background: none;
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: #fff;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🛒 Giỏ hàng của bạn</h1>
+
+  <div id="cartContent" class="cart-wrapper" style="display:none">
+    <div id="list" class="cart-list"></div>
+
+    <div class="summary-card">
+      <h3>Tổng kết đơn hàng</h3>
+      <div class="summary-line">
+        <span>Tạm tính</span>
+        <span id="subtotal">0 ₫</span>
+      </div>
+      <div class="summary-total">
+        <span>Tổng cộng</span>
+        <span id="total">0 ₫</span>
+      </div>
+
+      <button class="checkout-btn" onclick="checkout()">
+        TIẾN HÀNH THANH TOÁN
+      </button>
+
+      <button class="clear-btn" onclick="clearCart()">
+        Xóa toàn bộ giỏ hàng
+      </button>
+    </div>
+  </div>
+
+  <div id="empty" class="empty-state" style="display:none">
+    <h3>Giỏ hàng trống</h3>
+    <a href="/">← Quay lại cửa hàng</a>
+  </div>
+</div>
+
+<script>
+/* ===== AUTH ===== */
+const Auth = {
+  accessToken: null,
+  async refresh() {
+    const res = await fetch('/api/auth/refreshToken', { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    this.accessToken = data.accessToken;
+  },
+  async init() {
+    if (!this.accessToken) await this.refresh();
+  }
+};
+
+async function apiFetch(url, options = {}) {
+  await Auth.init();
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${Auth.accessToken}`
+    }
+  });
+}
+
+/* ===== CART ===== */
+const listEl = document.getElementById('list');
+const cartContent = document.getElementById('cartContent');
+const emptyEl = document.getElementById('empty');
+const totalEl = document.getElementById('total');
+const subtotalEl = document.getElementById('subtotal');
+
+async function loadCart() {
+  const res = await apiFetch('/api/cart');
+  const data = await res.json();
+  renderCart(data.data || []);
+}
+
+function renderCart(items) {
+  listEl.innerHTML = '';
+  if (!items.length) {
+    emptyEl.style.display = 'block';
+    cartContent.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  cartContent.style.display = 'grid';
+
+  let total = 0;
+  items.forEach(item => {
+    total += item.price * item.quantity;
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML = `
+      <img src="${item.image}">
+      <div class="info">
+        <div class="name">${item.product_name}</div>
+        <div class="price">${item.price.toLocaleString()} ₫</div>
+      </div>
+      <div class="qty-controls">
+        <button class="remove-btn" onclick="removeItem(${item.cart_item_id})">🗑️ Xóa</button>
+      </div>
+    `;
+    listEl.appendChild(div);
+  });
+  totalEl.textContent = subtotalEl.textContent = total.toLocaleString() + ' ₫';
+}
+
+async function removeItem(id) {
+  await apiFetch(`/api/cart/${id}`, { method: 'DELETE' });
+  loadCart();
+}
+
+async function clearCart() {
+  await apiFetch('/api/cart', { method: 'DELETE' });
+  loadCart();
+}
+
+/* ===== CHECKOUT (API GIỮ NGUYÊN) ===== */
+async function checkout() {
+  if (!confirm('Xác nhận thanh toán?')) return;
+
+  const btn = document.querySelector('.checkout-btn');
+  btn.disabled = true;
+  btn.textContent = 'Đang xử lý...';
+
+  try {
+    const res = await apiFetch('/api/order/checkout', { method: 'POST' });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message);
+
+    alert(`Thanh toán thành công!\nMã đơn: ${data.data.orderId}`);
+    loadCart();
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'TIẾN HÀNH THANH TOÁN';
+  }
+}
+
+loadCart();
+</script>
+
+</body>
+</html>

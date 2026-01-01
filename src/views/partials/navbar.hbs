@@ -1,0 +1,330 @@
+<nav class="navbar">
+  <div class="nav-left">
+    <a href="/" class="logo">🛒 MyShop</a>
+  </div>
+
+  <div class="nav-center">
+    <form class="search-form" action="/search" method="GET">
+      <input name="q" placeholder="Tìm kiếm sản phẩm..." />
+      <button type="submit" class="search-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </button>
+    </form>
+  </div>
+
+  <div class="nav-right">
+    <a href="/signin" id="nav-login" class="login-link">Đăng nhập</a>
+
+    <div id="nav-user" class="user-actions" style="display:none">
+      <button class="action-btn" id="notif-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span class="badge" id="notif-count">0</span>
+      </button>
+
+      <div class="cart-container">
+        <button class="action-btn" id="cart-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <span class="badge" id="cart-count">0</span>
+        </button>
+        
+        <div id="cart-dropdown" class="cart-dropdown">
+          <div class="cart-header">Đơn hàng của bạn</div>
+          <div id="cart-mini-list" class="cart-mini-list">
+            <div class="cart-empty-msg">Đang triệu hồi...</div>
+          </div>
+          <div class="cart-footer">
+            <div class="cart-total-line">
+              <span>Tổng tiền:</span>
+              <span id="cart-mini-total">0 ₫</span>
+            </div>
+            <div class="cart-actions-btns">
+              <a href="/cart" class="view-cart-btn">Chi tiết</a>
+              <button id="buy-now-btn" class="buy-now-btn">Thanh toán ngay</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-container">
+        <button class="avatar-btn" id="profile-btn">
+          <img id="nav-avatar" src="" alt="avatar" onerror="this.src='https://ui-avatars.com/api/?name=User&background=2563eb&color=fff'">
+        </button>
+        <ul id="profile-dropdown" class="dropdown-menu">
+          <li class="user-header">
+            <div id="nav-username" class="username"></div>
+            <div class="user-role">Thành viên</div>
+          </li>
+          <li><a href="/profile">Hồ sơ cá nhân</a></li>
+          <li><a href="/order">Đơn hàng</a></li>
+          <li class="divider"></li>
+          <li><button id="logout-btn" class="logout-link">Rời khỏi hệ thống</button></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<style>
+:root {
+  --primary: #2563eb;
+  --bg-hover: #f1f5f9;
+  --border: #e5e7eb;
+}
+
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.nav-left .logo { font-size: 22px; font-weight: 800; text-decoration: none; color: #0f172a; }
+.nav-center { flex: 1; display: flex; justify-content: center; }
+.search-form { position: relative; display: flex; align-items: center; width: 450px; }
+.search-form input {
+  width: 100%; padding: 10px 50px 10px 20px; border-radius: 10px;
+  border: 1px solid #d1d5db; background: #f9fafb; font-size: 14px; outline: none;
+}
+.search-form input:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+.search-btn {
+  position: absolute; right: 4px; top: 4px; bottom: 4px; width: 40px;
+  background: var(--primary); color: #fff; border: none; border-radius: 7px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.user-actions { display: flex; align-items: center; gap: 16px; }
+
+.action-btn {
+  position: relative; width: 40px; height: 40px; border-radius: 10px;
+  border: none; background: transparent; cursor: pointer; color: #475569;
+  display: flex; align-items: center; justify-content: center;
+}
+.action-btn:hover { background: var(--bg-hover); color: var(--primary); }
+
+.badge {
+  position: absolute; top: 2px; right: 2px; background: #ef4444;
+  color: white; font-size: 10px; font-weight: 700; min-width: 18px;
+  height: 18px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; border: 2px solid #fff;
+}
+
+.avatar-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e2e8f0;
+  padding: 0; background: none; cursor: pointer; overflow: hidden;
+}
+.avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
+
+.cart-dropdown, .dropdown-menu {
+  position: absolute; top: 55px; right: 0;
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  display: none; z-index: 1001; transform-origin: top right;
+}
+.show { display: block !important; animation: slideIn 0.25s ease-out; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cart-dropdown { width: 380px; }
+.cart-header { padding: 14px 16px; font-weight: 800; font-size: 15px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
+.cart-mini-list { max-height: 380px; overflow-y: auto; }
+
+.cart-mini-item { 
+  display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f8fafc; 
+  align-items: center; justify-content: space-between;
+}
+
+.item-main { display: flex; gap: 12px; align-items: center; flex: 1; }
+.cart-mini-item img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; background: #f1f5f9; }
+.mini-info { flex: 1; }
+.m-name { font-size: 13.5px; font-weight: 600; color: #1e293b; margin-bottom: 2px; }
+.m-price { color: #ef4444; font-size: 13px; font-weight: 700; }
+
+.mini-qty-control { 
+  display: flex; align-items: center; gap: 8px; background: #f8fafc; 
+  border: 1px solid #e2e8f0; border-radius: 8px; padding: 3px 6px;
+}
+.mini-qty-control button { 
+  width: 24px; height: 24px; border: none; background: #fff; cursor: pointer; 
+  border-radius: 4px; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.mini-qty-control button:hover { background: var(--primary); color: #fff; }
+.mini-qty-control span { font-size: 13px; font-weight: 700; color: #1e293b; min-width: 20px; text-align: center; }
+
+.cart-footer { padding: 16px; background: #f8fafc; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.cart-total-line { display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: 800; color: #1e293b; font-size: 15px; }
+.cart-actions-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.view-cart-btn { background: #fff; border: 1px solid #d1d5db; text-decoration: none; text-align: center; padding: 10px; border-radius: 8px; color: #334155; font-size: 13px; font-weight: 600; }
+.buy-now-btn { background: var(--primary); border: none; color: #fff; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+.buy-now-btn:hover { opacity: 0.9; }
+.buy-now-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+.dropdown-menu { width: 220px; list-style: none; padding: 8px 0; }
+.user-header { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; margin-bottom: 4px; }
+.username { font-weight: 800; color: #1e293b; font-size: 15px; }
+.dropdown-menu a, .logout-link { display: block; padding: 10px 16px; text-decoration: none; color: #334155; font-size: 14px; background: none; border: none; width: 100%; text-align: left; cursor: pointer; }
+.dropdown-menu a:hover { background: var(--bg-hover); color: var(--primary); }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  let accessToken = null;
+  const cartBtn = document.getElementById('cart-btn');
+  const cartDropdown = document.getElementById('cart-dropdown');
+  const profileBtn = document.getElementById('profile-btn');
+  const profileDropdown = document.getElementById('profile-dropdown');
+  const buyNowBtn = document.getElementById('buy-now-btn');
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/auth/refreshToken', { method: 'POST', credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      accessToken = data.accessToken;
+      const meRes = await fetch('/api/user/me', { headers: { Authorization: 'Bearer ' + accessToken }});
+      const user = await meRes.json();
+      
+      document.getElementById('nav-login').style.display = 'none';
+      document.getElementById('nav-user').style.display = 'flex';
+      document.getElementById('nav-username').textContent = user.username;
+      
+      const avatarImg = document.getElementById('nav-avatar');
+      avatarImg.src = `/${user.id}.png`; 
+      loadCartCount();
+    } catch (e) {}
+  }
+
+  async function loadCartCount() {
+    if (!accessToken) return;
+    try {
+      const res = await fetch('/api/cart', { headers: { Authorization: 'Bearer ' + accessToken }});
+      const result = await res.json();
+      const items = result.data || [];
+      document.getElementById('cart-count').textContent = items.reduce((sum, i) => sum + i.quantity, 0);
+    } catch (e) {}
+  }
+
+  async function loadMiniCartDetail() {
+    const listEl = document.getElementById('cart-mini-list');
+    const totalEl = document.getElementById('cart-mini-total');
+    try {
+      const res = await fetch('/api/cart', { headers: { Authorization: 'Bearer ' + accessToken }});
+      const result = await res.json();
+      const items = result.data || [];
+      
+      if (items.length === 0) {
+        listEl.innerHTML = '<div style="padding:30px; text-align:center; color:#94a3b8; font-size:14px;">Giỏ hàng của bạn đang trống rỗng</div>';
+        totalEl.textContent = '0 ₫';
+        buyNowBtn.disabled = true;
+        return;
+      }
+
+      buyNowBtn.disabled = false;
+      let total = 0;
+      listEl.innerHTML = items.map(item => {
+        total += item.price * item.quantity;
+        return `
+          <div class="cart-mini-item">
+            <div class="item-main">
+              <img src="${item.image || 'https://via.placeholder.com/50'}">
+              <div class="mini-info">
+                <div class="m-name">${item.product_name}</div>
+                <div class="m-price">${Number(item.price).toLocaleString()} ₫</div>
+              </div>
+            </div>
+            <div class="mini-qty-control" onclick="event.stopPropagation()">
+              <button onclick="updateQty(${item.cart_item_id}, ${item.quantity - 1})">−</button>
+              <span>${item.quantity}</span>
+              <button onclick="updateQty(${item.cart_item_id}, ${item.quantity + 1})">+</button>
+            </div>
+          </div>`;
+      }).join('');
+      totalEl.textContent = total.toLocaleString() + ' ₫';
+      document.getElementById('cart-count').textContent = items.reduce((sum, i) => sum + i.quantity, 0);
+    } catch (e) { listEl.innerHTML = '<div style="padding:20px; text-align:center; color:red">Lỗi kết nối...</div>'; }
+  }
+
+  // TÍNH NĂNG THANH TOÁN (CHECKOUT)
+  buyNowBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!accessToken) return alert("Vui lòng đăng nhập!");
+    
+    if (!confirm("Bạn có chắc chắn muốn thanh toán đơn hàng này?")) return;
+
+    try {
+      buyNowBtn.disabled = true;
+      buyNowBtn.textContent = "Đang xử lý...";
+
+      const res = await fetch('/api/order/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken
+        }
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        alert("Thanh toán thành công!");
+        // Sau khi thanh toán, làm mới giỏ hàng
+        document.getElementById('cart-count').textContent = "0";
+        cartDropdown.classList.remove('show');
+        window.location.href = '/order'; // Chuyển đến trang đơn hàng
+      } else {
+        alert("Thanh toán thất bại: " + (result.message || "Lỗi không xác định"));
+      }
+    } catch (err) {
+      alert("Lỗi kết nối khi thanh toán");
+    } finally {
+      buyNowBtn.disabled = false;
+      buyNowBtn.textContent = "Thanh toán ngay";
+    }
+  });
+
+  window.updateQty = async (id, newQty) => {
+    const method = newQty === 0 ? 'DELETE' : 'PUT';
+    const url = newQty === 0 ? `/api/cart/${id}` : '/api/cart';
+    const body = newQty === 0 ? null : JSON.stringify({ items: [{ cart_item_id: id, quantity: newQty }] });
+    await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken }, body });
+    loadMiniCartDetail();
+  };
+
+  cartBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    profileDropdown.classList.remove('show');
+    cartDropdown.classList.toggle('show');
+    if (cartDropdown.classList.contains('show')) loadMiniCartDetail();
+  });
+
+  profileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    cartDropdown.classList.remove('show');
+    profileDropdown.classList.toggle('show');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!cartDropdown.contains(e.target) && !profileDropdown.contains(e.target)) {
+      cartDropdown.classList.remove('show');
+      profileDropdown.classList.remove('show');
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' });
+    window.location.href = '/signin';
+  });
+
+  checkAuth();
+});
+</script>
