@@ -68,6 +68,25 @@ const getProductMeta = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+const searchProducts = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    const products = await productServices.searchProducts(q);
+
+    res.json({
+      success: true,
+      data: products
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server'
+    });
+  }
+};
+
 
 module.exports = {
   createProducts,//
@@ -76,5 +95,6 @@ module.exports = {
   updateProducts,//
   deleteProductByProductId,//
   getAllPublicProduct, // Export hàm mới
-  getProductMeta//
+  getProductMeta,//
+  searchProducts
 };

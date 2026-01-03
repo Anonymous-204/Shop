@@ -204,6 +204,23 @@ const deleteProductByProductId = async (productId) =>{
         conn.release();
     }
 }
+const searchProducts = async (keyword) => {
+  if (!keyword || !keyword.trim()) {
+    return [];
+  }
+
+  const search = `%${keyword.trim()}%`;
+
+  const [rows] = await db.query(`
+    SELECT id, name, price, image
+    FROM products
+    WHERE name LIKE ?
+      AND stock > 0
+    LIMIT 20
+  `, [search]);
+
+  return rows;
+};
 module.exports = {
   createProducts,
   getProductByuserId,
@@ -211,5 +228,6 @@ module.exports = {
   getAllPublicProduct,
   getPublicProductDetail,
   updateProducts,
-  deleteProductByProductId
+  deleteProductByProductId,
+  searchProducts
 }
