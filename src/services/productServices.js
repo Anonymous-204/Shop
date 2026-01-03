@@ -212,7 +212,7 @@ const searchProducts = async (keyword) => {
   const search = `%${keyword.trim()}%`;
 
   const [rows] = await db.query(`
-    SELECT id, name, price, image
+    SELECT id, name, price, image, stock
     FROM products
     WHERE name LIKE ?
       AND stock > 0

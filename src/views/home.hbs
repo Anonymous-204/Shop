@@ -5,7 +5,7 @@
   <title>Trang chủ</title>
 
   <style>
-    /* GIỮ NGUYÊN DECOR CỦA BẠN */
+    /* GIỮ NGUYÊN DECOR */
     * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
 
     body {
@@ -180,8 +180,6 @@
     .detail-val { color: #334155; margin-bottom: 4px; line-height: 1.6; }
     .detail-price { font-size: 32px; color: #ef4444; font-weight: 800; margin: 10px 0 20px 0; }
     .description-box { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
-    #modalContent::-webkit-scrollbar { width: 8px; }
-    #modalContent::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   </style>
 </head>
 
@@ -236,25 +234,28 @@ function renderProducts(products) {
     return;
   }
 
-  grid.innerHTML = products.map(p => `
+  grid.innerHTML = products.map(p => {
+    // SỬA LỖI Ở ĐÂY: Kiểm tra cả p.stock và p.quantity
+    const stockVal = (p.stock !== undefined) ? p.stock : (p.quantity !== undefined ? p.quantity : 0);
+
+    return `
     <div class="product-card" onclick="goDetail(${p.id})">
       <img src="${p.image || 'https://via.placeholder.com/400x300'}">
       <div class="product-body">
         <div class="product-name">${p.name}</div>
         <div class="price">${Number(p.price).toLocaleString()}₫</div>
-        <div class="meta">Tồn kho: ${p.stock}</div>
+        <div class="meta">Tồn kho: ${stockVal}</div>
       </div>
-      <div class="cart-overlay" data-id="${p.id}" data-stock="${p.stock}">
+      <div class="cart-overlay" data-id="${p.id}" data-stock="${stockVal}">
         <button class="cart-btn" onclick="decQty(event)">-</button>
         <div class="cart-qty">0</div>
         <button class="cart-btn" onclick="incQty(event)">+</button>
         <button class="cart-btn cart-submit disabled" onclick="addToCart(event)">V</button>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
-// HÀM TÌM KIẾM DÙNG CHUNG CHO NAVBAR
 window.loadProducts = async function(searchQuery = '') {
   const url = searchQuery 
     ? `/api/product/search?q=${encodeURIComponent(searchQuery)}` 
@@ -268,7 +269,6 @@ window.loadProducts = async function(searchQuery = '') {
   try {
     const res = await fetch(url);
     const data = await res.json();
-    // Kiểm tra nếu API trả về { data: [] } hoặc [ ]
     const products = Array.isArray(data) ? data : (data.data || []);
     renderProducts(products);
   } catch (e) {
