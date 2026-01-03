@@ -5,6 +5,7 @@
   <title>Trang chủ</title>
 
   <style>
+    /* GIỮ NGUYÊN DECOR CỦA BẠN */
     * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
 
     body {
@@ -30,7 +31,6 @@
       gap: 20px;
     }
 
-    /* ===== PRODUCT CARD ===== */
     .product-card {
       background: #fff;
       border: 1px solid #e2e8f0;
@@ -54,9 +54,7 @@
       background: #f1f5f9;
     }
 
-    .product-body {
-      padding: 16px;
-    }
+    .product-body { padding: 16px; }
 
     .product-name {
       font-weight: bold;
@@ -72,13 +70,8 @@
       margin-bottom: 8px;
     }
 
-    .meta {
-      font-size: 12px;
-      color: #64748b;
-      font-weight: 500;
-    }
+    .meta { font-size: 12px; color: #64748b; font-weight: 500; }
 
-    /* ===== CART OVERLAY (GÓC DƯỚI PHẢI) ===== */
     .cart-overlay {
       position: absolute;
       right: 10px;
@@ -119,27 +112,12 @@
       transition: all 0.2s;
     }
 
-    .cart-btn:hover {
-      background: #e2e8f0;
-      color: #1e293b;
-    }
-
-    .cart-qty {
-      min-width: 25px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .cart-submit {
-      background: #22c55e;
-      color: #fff;
-    }
-
+    .cart-btn:hover { background: #e2e8f0; color: #1e293b; }
+    .cart-qty { min-width: 25px; text-align: center; font-weight: bold; font-size: 14px; }
+    .cart-submit { background: #22c55e; color: #fff; }
     .cart-submit:hover { background: #16a34a; }
     .cart-submit.disabled { opacity: 0.3; pointer-events: none; }
 
-    /* ===== MODAL DETAIL (PHONG CÁCH SANG TRỌNG) ===== */
     #productModal {
       display: none;
       position: fixed;
@@ -164,7 +142,7 @@
       max-height: 85vh;
       border-radius: 16px;
       overflow-y: auto;
-      padding: 0; /* padding được đưa vào trong body để đẹp hơn */
+      padding: 0;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
       animation: modalSlideUp 0.3s ease-out;
     }
@@ -185,15 +163,8 @@
       line-height: 1;
     }
 
-    .modal-body-content {
-      display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 0;
-    }
-
-    @media (max-width: 768px) {
-      .modal-body-content { grid-template-columns: 1fr; }
-    }
+    .modal-body-content { display: grid; grid-template-columns: 1fr 1.2fr; gap: 0; }
+    @media (max-width: 768px) { .modal-body-content { grid-template-columns: 1fr; } }
 
     .modal-img-container {
       background: #f8fafc;
@@ -203,64 +174,26 @@
       padding: 20px;
     }
 
-    .modal-img {
-      width: 100%;
-      border-radius: 12px;
-      object-fit: cover;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    .modal-info-container {
-      padding: 40px;
-    }
-
-    .detail-label {
-      font-weight: 700;
-      color: #64748b;
-      margin-top: 20px;
-      display: block;
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 0.05em;
-    }
-
-    .detail-val {
-      color: #334155;
-      margin-bottom: 4px;
-      line-height: 1.6;
-    }
-
-    .detail-price {
-      font-size: 32px;
-      color: #ef4444;
-      font-weight: 800;
-      margin: 10px 0 20px 0;
-    }
-
-    .description-box {
-      background: #f1f5f9;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 10px;
-      font-size: 14px;
-    }
-
-    /* Scrollbar */
+    .modal-img { width: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .modal-info-container { padding: 40px; }
+    .detail-label { font-weight: 700; color: #64748b; margin-top: 20px; display: block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+    .detail-val { color: #334155; margin-bottom: 4px; line-height: 1.6; }
+    .detail-price { font-size: 32px; color: #ef4444; font-weight: 800; margin: 10px 0 20px 0; }
+    .description-box { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
     #modalContent::-webkit-scrollbar { width: 8px; }
     #modalContent::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   </style>
 </head>
 
 <body>
-  <h2>🛒 Danh mục sản phẩm</h2>
+  <h2 id="pageTitle">🛒 Danh mục sản phẩm</h2>
   <div id="productGrid" class="grid"></div>
 
   <div id="productModal">
     <div id="modalBlur" onclick="closeDetail()"></div>
     <div id="modalContent">
       <span class="close-modal" onclick="closeDetail()">&times;</span>
-      <div id="modalBody">
-         </div>
+      <div id="modalBody"></div>
     </div>
   </div>
 
@@ -295,10 +228,11 @@ async function apiFetch(url, options = {}) {
 const grid = document.getElementById('productGrid');
 const modal = document.getElementById('productModal');
 const modalBody = document.getElementById('modalBody');
+const pageTitle = document.getElementById('pageTitle');
 
 function renderProducts(products) {
   if (!products || products.length === 0) {
-    grid.innerHTML = `<div class="empty">Trống rỗng...</div>`;
+    grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:50px; color:#64748b">Không tìm thấy sản phẩm nào...</div>`;
     return;
   }
 
@@ -320,6 +254,28 @@ function renderProducts(products) {
   `).join('');
 }
 
+// HÀM TÌM KIẾM DÙNG CHUNG CHO NAVBAR
+window.loadProducts = async function(searchQuery = '') {
+  const url = searchQuery 
+    ? `/api/product/search?q=${encodeURIComponent(searchQuery)}` 
+    : '/api/product/all';
+  
+  if(searchQuery) pageTitle.innerText = `🔍 Kết quả cho: ${searchQuery}`;
+  else pageTitle.innerText = `🛒 Danh mục sản phẩm`;
+
+  grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px">⏳ Đang tìm kiếm...</div>';
+  
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    // Kiểm tra nếu API trả về { data: [] } hoặc [ ]
+    const products = Array.isArray(data) ? data : (data.data || []);
+    renderProducts(products);
+  } catch (e) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px; color:red">Không thể kết nối máy chủ</div>';
+  }
+}
+
 async function goDetail(id) {
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -338,7 +294,6 @@ async function goDetail(id) {
         <div class="modal-info-container">
           <h1 style="margin:0; font-size: 24px; color: #0f172a;">${p.name}</h1>
           <div class="detail-price">${Number(p.price).toLocaleString()}₫</div>
-          
           <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; padding-top: 10px;">
             <div>
               <span class="detail-label">Thương hiệu</span>
@@ -349,15 +304,8 @@ async function goDetail(id) {
               <div class="detail-val"><b>${p.category_name || 'N/A'}</b></div>
             </div>
           </div>
-
           <span class="detail-label">Mô tả sản phẩm</span>
           <div class="detail-val description-box">${p.description || 'Không có mô tả.'}</div>
-          
-          <span class="detail-label">Thông số kỹ thuật</span>
-          <div class="detail-val" style="font-size: 14px; font-family: monospace;">${p.specification || 'Đang cập nhật...'}</div>
-          
-          <span class="detail-label">Cập nhật lần cuối</span>
-          <div class="detail-val" style="font-size: 12px;">${new Date(p.updated_at).toLocaleString('vi-VN')}</div>
         </div>
       </div>
     `;
@@ -422,20 +370,8 @@ async function addToCart(e) {
   }
 }
 
-async function loadProducts() {
-  grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px">⏳ Đang tải sản phẩm...</div>';
-  try {
-    const res = await fetch('/api/product/all');
-    const products = await res.json();
-    renderProducts(products);
-  } catch (e) {
-    grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px">Không thể kết nối máy chủ</div>';
-  }
-}
-
-loadProducts();
+// Khởi tạo trang
+window.loadProducts();
 </script>
 </body>
 </html>
-
-
