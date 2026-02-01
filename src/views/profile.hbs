@@ -122,152 +122,131 @@
     </div>
   </div>
 
-  <script type="module">
-    let isEditingMode = false;
-    let currentUserData = {}; // Lưu dữ liệu gốc từ BE
-    let pendingData = {};     // Lưu dữ liệu đã thay đổi nhưng chưa gửi BE
-    let accessToken = "";
+<script>
+let isEditingMode = false;
+let currentUserData = {};
+let pendingData = {};
 
-    async function loadProfile() {
-      try {
-        const refreshRes = await fetch('/api/auth/refreshToken', { method: 'POST', credentials: 'include' });
-        if (!refreshRes.ok) throw new Error('Unauth');
-        const data = await refreshRes.json();
-        accessToken = data.accessToken;
+document.addEventListener('DOMContentLoaded', loadProfile);
 
-        const profileRes = await fetch('/api/user/profile', {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        const user = await profileRes.json();
-        currentUserData = user.data ?? user;
-        renderUI(currentUserData);
-      } catch (err) {
-        console.error(err);
-        document.getElementById('username-text').textContent = "Lỗi kết nối";
-      }
+async function loadProfile() {
+  try {
+    const res = await fetch('/api/user/profile', { credentials: 'include' });
+    if (!res.ok) throw new Error('Unauth');
+
+    const user = await res.json();
+    currentUserData = user.data ?? user;
+    renderUI(currentUserData);
+  } catch {
+    document.getElementById('username-text').textContent = "Chưa đăng nhập";
+  }
+}
+
+function renderUI(data) {
+  const avatarImg = document.getElementById('avatar-img');
+  const avatarFallback = document.getElementById('avatar-fallback');
+
+  if (data.avatar_url) {
+    avatarImg.src = data.avatar_url;
+    avatarImg.style.display = 'block';
+    avatarFallback.style.display = 'none';
+  } else {
+    avatarImg.style.display = 'none';
+    avatarFallback.style.display = 'block';
+    avatarFallback.textContent = data.user_name?.charAt(0).toUpperCase() || '?';
+  }
+
+  const formatDate = s => s ? new Date(s).toLocaleDateString('vi-VN') : '---';
+
+  document.getElementById('username-text').textContent = data.user_name || '';
+  document.getElementById('email-text').textContent = data.email || '';
+  document.getElementById('role').textContent = data.role || 'Thành viên';
+  document.getElementById('user_id').textContent = data.id || '---';
+  document.getElementById('bio-text').textContent = data.bio || 'Chưa có lời giới thiệu.';
+  document.getElementById('created_at').textContent = formatDate(data.created_at);
+  document.getElementById('updated_at').textContent = formatDate(data.updated_at);
+}
+
+/* ================= CHẾ ĐỘ CHỈNH SỬA ================= */
+
+window.handleMainAction = async () => {
+  const btn = document.getElementById('edit-main-btn');
+  const btnText = document.getElementById('btn-text');
+  const pens = document.querySelectorAll('.edit-pen');
+
+  if (!isEditingMode) {
+    isEditingMode = true;
+    btn.classList.add('btn-success');
+    btnText.textContent = "Cập nhật tất cả";
+    pens.forEach(p => p.style.display = 'inline-block');
+    return;
+  }
+
+  if (Object.keys(pendingData).length === 0) {
+    alert("Bạn chưa thay đổi gì.");
+    exitEditMode();
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/user/edit', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pendingData)
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+
+    alert("Cập nhật thành công!");
+    pendingData = {};
+    await loadProfile();
+    exitEditMode();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+function exitEditMode() {
+  isEditingMode = false;
+  document.getElementById('edit-main-btn').classList.remove('btn-success');
+  document.getElementById('btn-text').textContent = "Chỉnh sửa hồ sơ";
+  document.querySelectorAll('.edit-pen').forEach(p => p.style.display = 'none');
+}
+
+/* ================= CHỈNH SỬA TỪNG Ô ================= */
+
+window.toggleEditRow = (field) => {
+  const map = {
+    user_name: document.getElementById('username-text'),
+    email: document.getElementById('email-text'),
+    bio: document.getElementById('bio-text')
+  };
+
+  const el = map[field];
+  if (!el) return;
+
+  const oldValue = el.textContent;
+  const input = document.createElement('input');
+  input.className = 'edit-input';
+  input.value = oldValue;
+
+  el.style.display = 'none';
+  el.parentElement.appendChild(input);
+  input.focus();
+
+  input.addEventListener('blur', () => {
+    const newVal = input.value.trim();
+    input.remove();
+    el.style.display = '';
+
+    if (newVal !== oldValue) {
+      el.textContent = newVal;
+      pendingData[field] = newVal;
     }
+  });
+};
+</script>
 
-    function renderUI(data) {
-      const avatarImg = document.getElementById('avatar-img');
-      const avatarFallback = document.getElementById('avatar-fallback');
 
-      if (data.id) {
-        avatarImg.onerror = () => {
-          avatarImg.style.display = 'none';
-          avatarFallback.style.display = 'block';
-          avatarFallback.textContent = data.email?.charAt(0).toUpperCase() || '?';
-        };
-        avatarImg.src = `/${data.id}.png`;
-        avatarImg.style.display = 'block';
-        avatarFallback.style.display = 'none';
-      }
-
-      const formatDate = (s) => s ? new Date(s).toLocaleDateString('vi-VN') : '---';
-
-      document.getElementById('username-text').textContent = data.username || data.email?.split('@')[0];
-      document.getElementById('email-text').textContent = data.email;
-      document.getElementById('role').textContent = data.role || 'Thành viên';
-      document.getElementById('user_id').textContent = data.id || '---';
-      document.getElementById('bio-text').textContent = data.bio || 'Chưa có lời giới thiệu.';
-      document.getElementById('created_at').textContent = formatDate(data.created_at);
-      document.getElementById('updated_at').textContent = formatDate(data.updated_at);
-    }
-
-    // Toggle chế độ chỉnh sửa tổng thể
-    window.handleMainAction = async () => {
-      const btn = document.getElementById('edit-main-btn');
-      const btnText = document.getElementById('btn-text');
-      const pens = document.querySelectorAll('.edit-pen');
-
-      if (!isEditingMode) {
-        // Vào chế độ chỉnh sửa
-        isEditingMode = true;
-        btn.classList.add('btn-success');
-        btnText.textContent = "Cập nhật tất cả";
-        pens.forEach(p => p.style.display = 'inline-block');
-      } else {
-        // Gửi API PATCH
-        if (Object.keys(pendingData).length === 0) {
-            alert("Bạn chưa thay đổi thông tin nào.");
-            exitEditMode();
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/user/edit', {
-                method: 'PATCH',
-                headers: { 
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(pendingData)
-            });
-
-            if (res.ok) {
-                alert("Cập nhật thành công!");
-                location.reload();
-            } else {
-                alert("Lỗi khi cập nhật dữ liệu.");
-            }
-        } catch (e) {
-            alert("Lỗi kết nối server.");
-        }
-      }
-    };
-
-    function exitEditMode() {
-        isEditingMode = false;
-        document.getElementById('edit-main-btn').classList.remove('btn-success');
-        document.getElementById('btn-text').textContent = "Chỉnh sửa hồ sơ";
-        document.querySelectorAll('.edit-pen').forEach(p => p.style.display = 'none');
-    }
-
-    // Biến đổi Text thành Input
-    window.toggleEditRow = (field) => {
-        const containerMap = {
-            username: document.getElementById('username-text').parentElement,
-            email: document.getElementById('email-text').parentElement,
-            bio: document.getElementById('bio-container')
-        };
-        
-        const parent = containerMap[field];
-        const currentVal = (field === 'bio') ? document.getElementById('bio-text').textContent : document.getElementById(`${field}-text`).textContent;
-
-        const isTextArea = field === 'bio';
-        const inputHtml = isTextArea 
-            ? `<textarea class="edit-input" id="input-${field}">${currentVal}</textarea>`
-            : `<input class="edit-input" id="input-${field}" value="${currentVal}">`;
-
-        parent.innerHTML = `
-            <div class="edit-row">
-                ${inputHtml}
-                <button class="btn-save-inline" onclick="saveTemp('${field}')">Lưu</button>
-            </div>
-        `;
-    };
-
-    // Lưu tạm vào pendingData
-    window.saveTemp = (field) => {
-        const newVal = document.getElementById(`input-${field}`).value;
-        pendingData[field] = newVal; // Lưu vào hàng chờ
-
-        // Cập nhật lại UI tạm thời
-        const parentMap = {
-            username: document.querySelector('.user-main h2'),
-            email: document.querySelectorAll('.val-wrapper')[1],
-            bio: document.getElementById('bio-container')
-        };
-
-        if(field === 'username') {
-            parentMap.username.innerHTML = `<span id="username-text">${newVal}</span> <i class="fa-solid fa-pen edit-pen" style="display:inline-block" onclick="toggleEditRow('username')"></i>`;
-        } else if(field === 'email') {
-            parentMap.email.innerHTML = `<span id="email-text">${newVal}</span> <i class="fa-solid fa-pen edit-pen" style="display:inline-block" onclick="toggleEditRow('email')"></i>`;
-        } else {
-            parentMap.bio.innerHTML = `<span id="bio-text">${newVal}</span> <i class="fa-solid fa-pen edit-pen" style="display:inline-block" onclick="toggleEditRow('bio')"></i>`;
-        }
-    };
-
-    window.addEventListener('DOMContentLoaded', loadProfile);
-  </script>
-</body>
-</html>

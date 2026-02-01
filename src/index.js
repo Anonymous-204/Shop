@@ -8,6 +8,20 @@ const userRoutes = require('./routes/userRoutes');
 const port = process.env.PORT || 3000;
 const exphbs = require('express-handlebars');
 const cookieParser = require('cookie-parser');
+const { connectDB } = require('./lib/db');
+//========================SOCKETIO=========================//
+const http = require("http");
+const { Server } = require("socket.io");
+const server = http.createServer(app);
+const io = new Server(server);
+io.on("connection", socket => {
+  console.log("Connected:", socket.id);
+
+  socket.on("msg", data => {
+    console.log("Client:", data);
+    socket.emit("reply", "Server nhận rồi");
+  });
+});
 //========================ROUTER==========================//
 const productRoutes = require('./routes/productRoutes')
 const cartRoutes = require('./routes/cartRoutes')
@@ -15,7 +29,7 @@ const orderRoutes = require('./routes/orderRoutes')
 
 
 
-const { connectDB } = require('./lib/db');
+
 connectDB(); // chỉ gọi 1 lần khi start server
 dotenv.config();
 app.use(express.static(path.join(__dirname, 'public')));
@@ -65,9 +79,8 @@ app.use('/api/cart', cartRoutes)
 app.use('/api/order', orderRoutes)
 app.use('/api/user', userRoutes)
 
-console.log('🔥 BACKEND STARTED');
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+// app.listen(port, () => {console.log(`Server running on port ${port}`);});
+server.listen(port, () => {
+  console.log(`Server + Socket running on port ${port}`);
 });
 

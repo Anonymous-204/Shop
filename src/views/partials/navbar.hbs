@@ -13,7 +13,13 @@
   </div>
 
   <div class="nav-right">
-    <a href="/signin" id="nav-login" class="login-link">Đăng nhập</a>
+    <button
+      id="nav-login"
+      class="login-btn"
+      onclick="window.location.href='/signin'">
+      Đăng nhập
+    </button>
+
 
     <div id="nav-user" class="user-actions" style="display:none">
       <button class="action-btn" id="notif-btn">
@@ -134,6 +140,30 @@
   height: 18px; border-radius: 50%; display: flex;
   align-items: center; justify-content: center; border: 2px solid #fff;
 }
+.login-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+.login-btn:focus {
+  outline: none;
+}
 
 .avatar-btn {
   width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e2e8f0;
@@ -207,72 +237,76 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-  /* ============ LOGIC SEARCH MỚI ============ */
+
   const searchForm = document.getElementById('navSearchForm');
   const searchInput = document.getElementById('navSearchInput');
 
   if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
-      e.preventDefault(); // Ngăn load lại trang
+      e.preventDefault();
       const query = searchInput.value.trim();
-      
-      // Kiểm tra nếu đang ở trang chủ (có hàm loadProducts)
       if (typeof window.loadProducts === 'function') {
         window.loadProducts(query);
       } else {
-        // Nếu ở trang khác (profile, cart...), chuyển hướng về trang chủ kèm query
         window.location.href = `/?q=${encodeURIComponent(query)}`;
       }
     });
   }
-  /* ========================================= */
 
-  let accessToken = null;
   const cartBtn = document.getElementById('cart-btn');
   const cartDropdown = document.getElementById('cart-dropdown');
   const profileBtn = document.getElementById('profile-btn');
   const profileDropdown = document.getElementById('profile-dropdown');
   const buyNowBtn = document.getElementById('buy-now-btn');
 
+  /* ================== KIỂM TRA ĐĂNG NHẬP ================== */
   async function checkAuth() {
     try {
-      const res = await fetch('/api/auth/refreshToken', { method: 'POST', credentials: 'include' });
+      // Gọi API me → nếu cookie hợp lệ sẽ trả user
+      const res = await fetch('/api/user/me', {
+        credentials: 'include'
+      });
+
       if (!res.ok) return;
-      const data = await res.json();
-      accessToken = data.accessToken;
-      const meRes = await fetch('/api/user/me', { headers: { Authorization: 'Bearer ' + accessToken }});
-      const user = await meRes.json();
-      
+
+      const user = await res.json();
+
       document.getElementById('nav-login').style.display = 'none';
       document.getElementById('nav-user').style.display = 'flex';
       document.getElementById('nav-username').textContent = user.username;
-      
+
       const avatarImg = document.getElementById('nav-avatar');
-      avatarImg.src = `/${user.id}.png`; 
+      avatarImg.src = user.avatar_url || 
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=2563eb&color=fff`;
+
+
       loadCartCount();
-    } catch (e) {}
+    } catch {}
   }
 
+  /* ================== GIỎ HÀNG ================== */
   async function loadCartCount() {
-    if (!accessToken) return;
     try {
-      const res = await fetch('/api/cart', { headers: { Authorization: 'Bearer ' + accessToken }});
+      const res = await fetch('/api/cart', { credentials: 'include' });
       const result = await res.json();
       const items = result.data || [];
-      document.getElementById('cart-count').textContent = items.reduce((sum, i) => sum + i.quantity, 0);
-    } catch (e) {}
+      document.getElementById('cart-count').textContent =
+        items.reduce((sum, i) => sum + i.quantity, 0);
+    } catch {}
   }
 
   async function loadMiniCartDetail() {
     const listEl = document.getElementById('cart-mini-list');
     const totalEl = document.getElementById('cart-mini-total');
+
     try {
-      const res = await fetch('/api/cart', { headers: { Authorization: 'Bearer ' + accessToken }});
+      const res = await fetch('/api/cart', { credentials: 'include' });
       const result = await res.json();
       const items = result.data || [];
-      
-      if (items.length === 0) {
-        listEl.innerHTML = '<div style="padding:30px; text-align:center; color:#94a3b8; font-size:14px;">Giỏ hàng của bạn đang trống rỗng</div>';
+
+      if (!items.length) {
+        listEl.innerHTML =
+          '<div style="padding:30px;text-align:center;color:#94a3b8;font-size:14px;">Giỏ hàng trống</div>';
         totalEl.textContent = '0 ₫';
         buyNowBtn.disabled = true;
         return;
@@ -280,6 +314,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       buyNowBtn.disabled = false;
       let total = 0;
+
       listEl.innerHTML = items.map(item => {
         total += item.price * item.quantity;
         return `
@@ -298,70 +333,72 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
           </div>`;
       }).join('');
-      totalEl.textContent = total.toLocaleString() + ' ₫';
-      document.getElementById('cart-count').textContent = items.reduce((sum, i) => sum + i.quantity, 0);
-    } catch (e) { listEl.innerHTML = '<div style="padding:20px; text-align:center; color:red">Lỗi kết nối...</div>'; }
-  }
 
-  buyNowBtn.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    if (!accessToken) return alert("Vui lòng đăng nhập!");
-    if (!confirm("Bạn có chắc chắn muốn thanh toán đơn hàng này?")) return;
-    try {
-      buyNowBtn.disabled = true;
-      buyNowBtn.textContent = "Đang xử lý...";
-      const res = await fetch('/api/order/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + accessToken
-        }
-      });
-      const result = await res.json();
-      if (res.ok) {
-        alert("Thanh toán thành công!");
-        document.getElementById('cart-count').textContent = "0";
-        cartDropdown.classList.remove('show');
-        window.location.href = '/order';
-      } else {
-        alert("Thanh toán thất bại: " + (result.message || "Lỗi không xác định"));
-      }
-    } catch (err) {
-      alert("Lỗi kết nối khi thanh toán");
-    } finally {
-      buyNowBtn.disabled = false;
-      buyNowBtn.textContent = "Thanh toán ngay";
+      totalEl.textContent = total.toLocaleString() + ' ₫';
+    } catch {
+      listEl.innerHTML = '<div style="padding:20px;text-align:center;color:red">Lỗi tải giỏ hàng</div>';
     }
-  });
+  }
 
   window.updateQty = async (id, newQty) => {
     const method = newQty === 0 ? 'DELETE' : 'PUT';
     const url = newQty === 0 ? `/api/cart/${id}` : '/api/cart';
-    const body = newQty === 0 ? null : JSON.stringify({ items: [{ cart_item_id: id, quantity: newQty }] });
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken }, body });
+    const body = newQty === 0 ? null :
+      JSON.stringify({ items: [{ cart_item_id: id, quantity: newQty }] });
+
+    await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body
+    });
+
     loadMiniCartDetail();
+    loadCartCount();
   };
 
-  cartBtn.addEventListener('click', (e) => {
+  buyNowBtn.addEventListener('click', async () => {
+    if (!confirm("Xác nhận thanh toán?")) return;
+
+    buyNowBtn.disabled = true;
+    buyNowBtn.textContent = "Đang xử lý...";
+
+    const res = await fetch('/api/order/checkout', {
+      method: 'POST',
+      credentials: 'include'
+    });
+
+    if (res.ok) {
+      alert("Thanh toán thành công!");
+      window.location.href = '/order';
+    } else {
+      alert("Thanh toán thất bại");
+    }
+
+    buyNowBtn.disabled = false;
+    buyNowBtn.textContent = "Thanh toán ngay";
+  });
+
+  /* ================== DROPDOWN ================== */
+  cartBtn.addEventListener('click', e => {
     e.stopPropagation();
     profileDropdown.classList.remove('show');
     cartDropdown.classList.toggle('show');
     if (cartDropdown.classList.contains('show')) loadMiniCartDetail();
   });
 
-  profileBtn.addEventListener('click', (e) => {
+  profileBtn.addEventListener('click', e => {
     e.stopPropagation();
     cartDropdown.classList.remove('show');
     profileDropdown.classList.toggle('show');
   });
 
-  document.addEventListener('click', (e) => {
-    if (!cartDropdown.contains(e.target) && !profileDropdown.contains(e.target)) {
-      cartDropdown.classList.remove('show');
-      profileDropdown.classList.remove('show');
-    }
+  document.addEventListener('click', () => {
+    cartDropdown.classList.remove('show');
+    profileDropdown.classList.remove('show');
   });
 
+  /* ================== LOGOUT ================== */
   document.getElementById('logout-btn').addEventListener('click', async () => {
     await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' });
     window.location.href = '/signin';

@@ -198,8 +198,8 @@
 
     <form id="password-form">
       <div class="field">
-        <label for="username">Tên người dùng</label>
-        <input id="username" name="username" type="text" placeholder="Nhập username..." required />
+        <label for="user_name">Tên người dùng</label>
+        <input id="user_name" name="user_name" type="text" placeholder="Nhập user_name..." required />
       </div>
 
       <div class="field">
@@ -238,7 +238,7 @@
       messageEl.className = 'message';
       btn.disabled = true;
 
-      const username = form.username.value.trim();
+      const user_name = form.user_name.value.trim();
       const password = form.oldPassword.value; // ĐỔI TÊN BIẾN: Khớp với controller "password"
       const newPassword = form.newPassword.value;
       const confirmPassword = form.confirmPassword.value;
@@ -264,7 +264,7 @@
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            username, 
+            user_name, 
             password, // Gửi tên trường là "password" thay vì "oldPassword"
             newPassword,
             confirmPassword

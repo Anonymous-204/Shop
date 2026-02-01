@@ -195,8 +195,8 @@
 
     <form id="login-form">
       <div class="field">
-        <label for="username">Tên người dùng</label>
-        <input id="username" name="username" type="text" placeholder="Tên của bạn..." required />
+        <label for="user_name">Tên người dùng</label>
+        <input id="user_name" name="user_name" type="text" placeholder="Tên của bạn..." required />
       </div>
 
       <div class="field">
@@ -225,7 +225,7 @@
       messageEl.className = "message";
       button.disabled = true;
 
-      const username = form.username.value.trim();
+      const user_name = form.user_name.value.trim();
       const password = form.password.value;
 
       try {
@@ -233,7 +233,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ user_name, password })
         });
 
         if (!res.ok) {

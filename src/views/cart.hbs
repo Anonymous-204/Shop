@@ -7,7 +7,9 @@
   <style>
     :root {
       --primary: #3b82f6;
+      --primary-hover: #2563eb;
       --danger: #ef4444;
+      --danger-hover: #dc2626;
       --text-main: #1e293b;
       --text-muted: #64748b;
       --bg: #f8fafc;
@@ -83,29 +85,30 @@
       align-items: flex-end;
       gap: 15px;
     }
-    .qty-input {
-      display: flex;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .qty-input button {
-      border: none;
-      width: 30px;
-      cursor: pointer;
-    }
-    .qty-input span {
-      width: 40px;
-      text-align: center;
-      font-weight: 600;
-    }
+
+    /* --- TRANG TRÍ NÚT XÓA (TỪNG ITEM) --- */
     .remove-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
+      background: #fff5f5;
+      border: 1px solid #fee2e2;
+      color: var(--danger);
       cursor: pointer;
       font-size: 13px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
+    .remove-btn:hover {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+
     .summary-card {
       background: #fff;
       padding: 24px;
@@ -130,31 +133,58 @@
       font-size: 18px;
       font-weight: 800;
     }
+
+    /* --- TRANG TRÍ NÚT THANH TOÁN --- */
     .checkout-btn {
       width: 100%;
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--primary), #2563eb);
       color: #fff;
       border: none;
-      padding: 14px;
-      border-radius: 8px;
+      padding: 16px;
+      border-radius: 10px;
       font-weight: 700;
-      font-size: 16px;
+      font-size: 15px;
+      letter-spacing: 0.5px;
       cursor: pointer;
       margin-top: 20px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+    .checkout-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+    .checkout-btn:active:not(:disabled) {
+      transform: translateY(0);
     }
     .checkout-btn:disabled {
-      opacity: 0.6;
+      background: #cbd5e1;
+      box-shadow: none;
       cursor: not-allowed;
     }
+
+    /* --- TRANG TRÍ NÚT CLEAR GIỎ HÀNG --- */
     .clear-btn {
       width: 100%;
-      background: none;
+      background: #fff;
       border: 1px solid #e2e8f0;
-      padding: 10px;
-      border-radius: 8px;
-      margin-top: 10px;
+      color: var(--text-muted);
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 12px;
       cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s ease;
     }
+    .clear-btn:hover {
+      background: #f8fafc;
+      color: var(--danger);
+      border-color: var(--danger);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
     .empty-state {
       text-align: center;
       padding: 60px 20px;
@@ -172,7 +202,7 @@
     <div id="list" class="cart-list"></div>
 
     <div class="summary-card">
-      <h3>Tổng kết đơn hàng</h3>
+      <h3 style="margin-top:0">Tổng kết đơn hàng</h3>
       <div class="summary-line">
         <span>Tạm tính</span>
         <span id="subtotal">0 ₫</span>
@@ -194,7 +224,7 @@
 
   <div id="empty" class="empty-state" style="display:none">
     <h3>Giỏ hàng trống</h3>
-    <a href="/">← Quay lại cửa hàng</a>
+    <a href="/" style="color: var(--primary); text-decoration: none; font-weight: 600;">← Quay lại cửa hàng</a>
   </div>
 </div>
 
@@ -267,18 +297,20 @@ function renderCart(items) {
 }
 
 async function removeItem(id) {
+  if (!confirm('Xóa sản phẩm này khỏi giỏ hàng?')) return;
   await apiFetch(`/api/cart/${id}`, { method: 'DELETE' });
   loadCart();
 }
 
 async function clearCart() {
+  if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?')) return;
   await apiFetch('/api/cart', { method: 'DELETE' });
   loadCart();
 }
 
-/* ===== CHECKOUT (API GIỮ NGUYÊN) ===== */
+/* ===== CHECKOUT ===== */
 async function checkout() {
-  if (!confirm('Xác nhận thanh toán?')) return;
+  if (!confirm('Xác nhận thanh toán đơn hàng này?')) return;
 
   const btn = document.querySelector('.checkout-btn');
   btn.disabled = true;

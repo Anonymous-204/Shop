@@ -1,191 +1,110 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const dotenv = require('dotenv');
 const { pool: db } = require('../lib/db');
 
-dotenv.config();
+/* ================= TẠO NGƯỜI DÙNG ================= */
+const createUser = async (user_name, email, password) => {
+  const [u1] = await db.query('SELECT id FROM users WHERE user_name=?', [user_name]);
+  if (u1.length) throw new Error('Tên đăng nhập đã tồn tại');
 
-/* =========================
-   CREATE USER
-========================= */
-const createUser = async (username, email, password) => {
-  // check username
-  const [userByUsername] = await db.query(
-    'SELECT id FROM users WHERE username = ?',
-    [username]
-  );
-  if (userByUsername.length > 0) {
-    throw new Error('Username already exists');
-  }
+  const [u2] = await db.query('SELECT id FROM users WHERE email=?', [email]);
+  if (u2.length) throw new Error('Email đã tồn tại');
 
-  // check email
-  const [userByEmail] = await db.query(
-    'SELECT id FROM users WHERE email = ?',
-    [email]
-  );
-  if (userByEmail.length > 0) {
-    throw new Error('Email already exists');
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
+  const hash = await bcrypt.hash(password, 10);
   await db.query(
-    'INSERT INTO users (username, email, hashed_password) VALUES (?, ?, ?)',
-    [username, email, hashedPassword]
+    'INSERT INTO users(user_name,email,hashed_password) VALUES(?,?,?)',
+    [user_name, email, hash]
   );
-
-  return { message: 'User created successfully' };
 };
 
-/* =========================
-   SIGN IN
-========================= */
-const authenticateUser = async (username, password) => {
-  const [rows] = await db.query(
-    'SELECT * FROM users WHERE username = ?',
-    [username]
-  );
-
-  if (rows.length === 0) {
-    throw new Error('Invalid username or password');
-  }
+/* ================= ĐĂNG NHẬP ================= */
+const authenticateUser = async (user_name, password) => {
+  const [rows] = await db.query('SELECT * FROM users WHERE user_name=?', [user_name]);
+  if (!rows.length) throw new Error('Sai tài khoản hoặc mật khẩu');
 
   const user = rows[0];
-
   const valid = await bcrypt.compare(password, user.hashed_password);
-  if (!valid) {
-    throw new Error('Invalid username or password');
-  }
+  if (!valid) throw new Error('Sai tài khoản hoặc mật khẩu');
 
-  // create refresh token
   const refreshToken = crypto.randomBytes(64).toString('hex');
 
   await db.query(
-    `INSERT INTO sessions (user_id, refresh_token, expires_at)
-     VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))`,
+    'INSERT INTO sessions(user_id,refresh_token,expires_at) VALUES(?,?,DATE_ADD(NOW(), INTERVAL 7 DAY))',
     [user.id, refreshToken]
   );
 
-  // create access token
   const accessToken = jwt.sign(
-    {
-      id: user.id,
-      username: user.username
-    },
+    { id: user.id, user_name: user.user_name },
     process.env.SECRET_KEY,
-    { expiresIn: '1h' }
+    { expiresIn: '15m' }
   );
-
 
   return { accessToken, refreshToken };
 };
 
-/* =========================
-   DELETE REFRESH TOKEN (LOGOUT)
-========================= */
-const deleteRefreshToken = async (refreshToken) => {
+/* ================= ĐĂNG XUẤT ================= */
+const deleteToken = async (refreshToken) => {
   if (!refreshToken) return;
-
-  await db.query(
-    'DELETE FROM sessions WHERE refresh_token = ?',
-    [refreshToken]
-  );
+  await db.query('DELETE FROM sessions WHERE refresh_token=?', [refreshToken]);
 };
 
-/* =========================
-   REFRESH ACCESS TOKEN
-========================= */
-const refreshAccessToken = async (refreshToken) => {
-  if (!refreshToken) {
-    throw new Error('No refresh token provided');
+/* ================= LÀM MỚI TOKEN (XOAY VÒNG) ================= */
+const refreshAccessToken = async (oldToken) => {
+  const [rows] = await db.query(
+    'SELECT * FROM sessions WHERE refresh_token=?',
+    [oldToken]
+  );
+  if (!rows.length) throw new Error('Token không hợp lệ');
+
+  const session = rows[0];
+  if (new Date(session.expires_at) < new Date()) {
+    await db.query('DELETE FROM sessions WHERE id=?', [session.id]);
+    throw new Error('Phiên đăng nhập hết hạn');
   }
 
-  const [sessions] = await db.query(
-    'SELECT * FROM sessions WHERE refresh_token = ?',
-    [refreshToken]
+  const newRefresh = crypto.randomBytes(64).toString('hex');
+
+  await db.query(
+    'UPDATE sessions SET refresh_token=? WHERE id=?',
+    [newRefresh, session.id]
   );
 
-  if (sessions.length === 0) {
-    throw new Error('Invalid refresh token');
-  }
-
-  const session = sessions[0];
-
-  if (new Date(session.expires_at) < new Date()) {
-    throw new Error('Refresh token expired');
-  }
-
-  const accessToken = jwt.sign(
+  const newAccess = jwt.sign(
     { id: session.user_id },
     process.env.SECRET_KEY,
-    { expiresIn: '1h' }
+    { expiresIn: '15m' }
   );
 
-  return { accessToken };
+  return { newAccess, newRefresh };
 };
 
-/* =========================
-   CHANGE PASSWORD BY USERNAME
-========================= */
-const changePassword = async (
-  username,
-  oldPassword,
-  newPassword,
-  confirmPassword
-) => {
-  // check confirm
-  if (newPassword !== confirmPassword) {
-    throw new Error('Confirm password does not match');
-  }
+/* ================= ĐỔI MẬT KHẨU ================= */
+const changePassword = async (userId, oldPass, newPass, confirm) => {
+  if (newPass !== confirm) throw new Error('Mật khẩu xác nhận không khớp');
 
-  // lấy user theo username
   const [rows] = await db.query(
-    'SELECT id, hashed_password FROM users WHERE username = ?',
-    [username]
+    'SELECT hashed_password FROM users WHERE id=?',
+    [userId]
   );
-
-  if (rows.length === 0) {
-    throw new Error('User not found');
-  }
-
   const user = rows[0];
 
-  // check mật khẩu cũ
-  const isValid = await bcrypt.compare(oldPassword, user.hashed_password);
-  if (!isValid) {
-    throw new Error('Old password is incorrect');
-  }
+  const valid = await bcrypt.compare(oldPass, user.hashed_password);
+  if (!valid) throw new Error('Mật khẩu cũ sai');
 
-  // tránh đổi trùng mật khẩu cũ
-  const isSame = await bcrypt.compare(newPassword, user.hashed_password);
-  if (isSame) {
-    throw new Error('New password must be different from old password');
-  }
+  const same = await bcrypt.compare(newPass, user.hashed_password);
+  if (same) throw new Error('Mật khẩu mới phải khác mật khẩu cũ');
 
-  // hash mật khẩu mới
-  const newHashedPassword = await bcrypt.hash(newPassword, 10);
+  const hash = await bcrypt.hash(newPass, 10);
 
-  // update mật khẩu
-  await db.query(
-    'UPDATE users SET hashed_password = ? WHERE id = ?',
-    [newHashedPassword, user.id]
-  );
-
-  // xoá toàn bộ session → bắt login lại
-  await db.query(
-    'DELETE FROM sessions WHERE user_id = ?',
-    [user.id]
-  );
-
-  return { message: 'Password changed successfully' };
+  await db.query('UPDATE users SET hashed_password=? WHERE id=?', [hash, userId]);
+  await db.query('DELETE FROM sessions WHERE user_id=?', [userId]);
 };
-
 
 module.exports = {
   createUser,
   authenticateUser,
-  deleteRefreshToken,
+  deleteToken,
   refreshAccessToken,
   changePassword
 };
