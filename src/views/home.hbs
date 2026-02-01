@@ -196,29 +196,23 @@
   </div>
 
 <script>
-/* ================= AUTH & FETCH ================= */
-const Auth = {
-  accessToken: null,
-  async refresh() {
-    const res = await fetch('/api/auth/refreshToken', { method: 'POST', credentials: 'include' });
-    if (!res.ok) throw new Error('NOT_LOGIN');
-    const data = await res.json();
-    this.accessToken = data.accessToken;
-  },
-  async verify() {
-    const res = await fetch('/api/user/me', { headers: { Authorization: `Bearer ${this.accessToken}` } });
-    if (!res.ok) throw new Error('INVALID_TOKEN');
-  },
-  async init() {
-    if (this.accessToken) return;
-    try { await this.refresh(); await this.verify(); } catch (e) {}
-  }
-};
-
+/* ================= AUTO REFRESH FETCH ================= */
 async function apiFetch(url, options = {}) {
-  if (!Auth.accessToken) await Auth.init();
-  const res = await fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${Auth.accessToken}` } });
-  if (res.status === 401 || res.status === 403) { Auth.accessToken = null; throw new Error('NOT_LOGIN'); }
+  let res = await fetch(url, { ...options, credentials: 'include' });
+
+  if (res.status === 401) {
+    const refresh = await fetch('/auth/refresh', {
+      method: 'POST',
+      credentials: 'include'
+    });
+
+    if (refresh.ok) {
+      res = await fetch(url, { ...options, credentials: 'include' });
+    } else {
+      throw new Error('NOT_LOGIN');
+    }
+  }
+
   return res;
 }
 
@@ -235,55 +229,52 @@ function renderProducts(products) {
   }
 
   grid.innerHTML = products.map(p => {
-    // SỬA LỖI Ở ĐÂY: Kiểm tra cả p.stock và p.quantity
-    const stockVal = (p.stock !== undefined) ? p.stock : (p.quantity !== undefined ? p.quantity : 0);
-
+    const stockVal = (p.stock ?? p.quantity ?? 0);
     return `
-    <div class="product-card" onclick="goDetail(${p.id})">
-      <img src="${p.image || 'https://via.placeholder.com/400x300'}">
-      <div class="product-body">
-        <div class="product-name">${p.name}</div>
-        <div class="price">${Number(p.price).toLocaleString()}₫</div>
-        <div class="meta">Tồn kho: ${stockVal}</div>
-      </div>
-      <div class="cart-overlay" data-id="${p.id}" data-stock="${stockVal}">
-        <button class="cart-btn" onclick="decQty(event)">-</button>
-        <div class="cart-qty">0</div>
-        <button class="cart-btn" onclick="incQty(event)">+</button>
-        <button class="cart-btn cart-submit disabled" onclick="addToCart(event)">V</button>
-      </div>
-    </div>
-  `}).join('');
+      <div class="product-card" onclick="goDetail(${p.id})">
+        <img src="${p.image || 'https://via.placeholder.com/400x300'}">
+        <div class="product-body">
+          <div class="product-name">${p.name}</div>
+          <div class="price">${Number(p.price).toLocaleString()}₫</div>
+          <div class="meta">Tồn kho: ${stockVal}</div>
+        </div>
+        <div class="cart-overlay" data-id="${p.id}" data-stock="${stockVal}">
+          <button class="cart-btn" onclick="decQty(event)">-</button>
+          <div class="cart-qty">0</div>
+          <button class="cart-btn" onclick="incQty(event)">+</button>
+          <button class="cart-btn cart-submit disabled" onclick="addToCart(event)">V</button>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 window.loadProducts = async function(searchQuery = '') {
   const url = searchQuery 
     ? `/api/product/search?q=${encodeURIComponent(searchQuery)}` 
     : '/api/product/all';
-  
-  if(searchQuery) pageTitle.innerText = `🔍 Kết quả cho: ${searchQuery}`;
-  else pageTitle.innerText = `🛒 Danh mục sản phẩm`;
 
-  grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px">⏳ Đang tìm kiếm...</div>';
-  
+  pageTitle.innerText = searchQuery ? `🔍 Kết quả cho: ${searchQuery}` : `🛒 Danh mục sản phẩm`;
+
+  grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px">⏳ Đang tải...</div>';
+
   try {
     const res = await fetch(url);
     const data = await res.json();
     const products = Array.isArray(data) ? data : (data.data || []);
     renderProducts(products);
-  } catch (e) {
+  } catch {
     grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px; color:red">Không thể kết nối máy chủ</div>';
   }
-}
+};
 
 async function goDetail(id) {
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
-  modalBody.innerHTML = '<div style="padding:40px; text-align:center">⏳ Đang tải dữ liệu...</div>';
+  modalBody.innerHTML = '<div style="padding:40px; text-align:center">⏳ Đang tải...</div>';
 
   try {
     const res = await fetch(`/api/product/${id}`);
-    if(!res.ok) throw new Error('Không tìm thấy sản phẩm');
+    if (!res.ok) throw new Error('Không tìm thấy sản phẩm');
     const p = await res.json();
 
     modalBody.innerHTML = `
@@ -292,25 +283,18 @@ async function goDetail(id) {
           <img src="${p.image || 'https://via.placeholder.com/400x300'}" class="modal-img">
         </div>
         <div class="modal-info-container">
-          <h1 style="margin:0; font-size: 24px; color: #0f172a;">${p.name}</h1>
+          <h1 style="margin:0; font-size: 24px;">${p.name}</h1>
           <div class="detail-price">${Number(p.price).toLocaleString()}₫</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-            <div>
-              <span class="detail-label">Thương hiệu</span>
-              <div class="detail-val"><b>${p.brand_name || 'N/A'}</b></div>
-            </div>
-            <div>
-              <span class="detail-label">Danh mục</span>
-              <div class="detail-val"><b>${p.category_name || 'N/A'}</b></div>
-            </div>
-          </div>
+          <span class="detail-label">Thương hiệu</span>
+          <div class="detail-val"><b>${p.brand_name || 'N/A'}</b></div>
+          <span class="detail-label">Danh mục</span>
+          <div class="detail-val"><b>${p.category_name || 'N/A'}</b></div>
           <span class="detail-label">Mô tả sản phẩm</span>
           <div class="detail-val description-box">${p.description || 'Không có mô tả.'}</div>
         </div>
-      </div>
-    `;
+      </div>`;
   } catch (err) {
-    modalBody.innerHTML = `<div style="padding:40px; color:red">Lỗi: ${err.message}</div>`;
+    modalBody.innerHTML = `<div style="padding:40px; color:red">${err.message}</div>`;
   }
 }
 
@@ -319,7 +303,7 @@ function closeDetail() {
   document.body.style.overflow = 'auto';
 }
 
-/* ================= CART LOGIC ================= */
+/* ================= CART ================= */
 function incQty(e) {
   e.stopPropagation();
   const overlay = e.target.closest('.cart-overlay');
@@ -350,28 +334,25 @@ async function addToCart(e) {
   const qty = Number(overlay.querySelector('.cart-qty').textContent);
   if (qty === 0) return;
 
-  try { await Auth.init(); } catch {
-    alert('🔐 Vui lòng đăng nhập!');
-    return;
-  }
-
   try {
     const res = await apiFetch('/api/cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productId, quantity: qty })
     });
+
     if (!res.ok) throw new Error();
     overlay.querySelector('.cart-qty').textContent = 0;
     overlay.querySelector('.cart-submit').classList.add('disabled');
     alert('✅ Đã thêm vào giỏ hàng');
-  } catch (err) {
-    alert('❌ Lỗi thêm giỏ hàng');
+  } catch {
+    alert('🔐 Vui lòng đăng nhập');
   }
 }
 
-// Khởi tạo trang
-window.loadProducts();
+/* INIT */
+loadProducts();
 </script>
+
 </body>
 </html>

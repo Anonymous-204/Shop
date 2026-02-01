@@ -1,5 +1,12 @@
 const { pool: db } = require('../lib/db');
-
+const getMe = async (userId) => {
+  const [[data]] = await db.query(
+    `SELECT id, user_name, avatar_url FROM users WHERE id = ?`,
+    [userId]
+  );
+  if (!data) throw new Error('Không tìm thấy user');
+  return data;
+};
 const getProfileById = async (userId) => {
   const [[data]] = await db.query(
     `SELECT id, user_name, email, bio, role, created_at, updated_at, avatar_url
@@ -84,6 +91,7 @@ const updateUserProfile = async (userId, payload) => {
 };
 
 module.exports = {
+  getMe,
   updateUserProfile,
   getProfileById
 };

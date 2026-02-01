@@ -241,35 +241,27 @@
 </div>
 
 <script>
-/* ===== AUTH ===== */
-const Auth = {
-  accessToken: null,
-  async refresh() {
-    try {
-      const res = await fetch('/api/auth/refreshToken', { method: 'POST', credentials: 'include' });
-      if (!res.ok) throw new Error('NOT_LOGGED_IN');
-      const data = await res.json();
-      this.accessToken = data.accessToken;
-    } catch (e) { window.location.href = '/signin'; }
-  },
-  async init() {
-    if (!this.accessToken) await this.refresh();
-  }
-};
-
+/* ================= AUTO REFRESH FETCH (COOKIE MODE) ================= */
 async function apiFetch(url, options = {}) {
-  await Auth.init();
-  let res = await fetch(url, {
-    ...options,
-    headers: { ...(options.headers || {}), Authorization: `Bearer ${Auth.accessToken}` }
-  });
+  let res = await fetch(url, { ...options, credentials: 'include' });
+
+  // Access token hết hạn
   if (res.status === 401) {
-    await Auth.refresh();
-    return fetch(url, {
-      ...options,
-      headers: { ...(options.headers || {}), Authorization: `Bearer ${Auth.accessToken}` }
+    const refresh = await fetch('/auth/refresh', {
+      method: 'POST',
+      credentials: 'include'
     });
+
+    if (refresh.ok) {
+      // thử lại request ban đầu
+      res = await fetch(url, { ...options, credentials: 'include' });
+    } else {
+      // refresh cũng hết hạn → mới redirect
+      window.location.href = '/signin';
+      return;
+    }
   }
+
   return res;
 }
 
@@ -291,6 +283,8 @@ function formatMoney(v) {
 async function loadOrders() {
   try {
     const res = await apiFetch('/api/order');
+    if (!res.ok) throw new Error();
+
     const result = await res.json();
     const orders = result.data || [];
 
@@ -301,8 +295,7 @@ async function loadOrders() {
 
     orderList.innerHTML = orders.map(order => {
       const status = order.status || 'PENDING';
-      
-      // Render chi tiết từng item bao gồm giá đơn vị và tổng giá của item đó
+
       const itemsHtml = (order.items || []).map(i => {
         const unitPrice = Number(i.price || 0);
         const qty = Number(i.quantity || 0);
@@ -353,13 +346,14 @@ async function loadOrders() {
         </div>
       `;
     }).join('');
-  } catch (err) {
+  } catch {
     orderList.innerHTML = `<div class="empty">Có lỗi xảy ra khi tải dữ liệu.</div>`;
   }
 }
 
 loadOrders();
 </script>
+
 
 </body>
 </html>

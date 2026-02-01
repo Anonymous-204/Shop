@@ -30,7 +30,15 @@
     .edit-pen:hover { transform: scale(1.2); }
     .edit-input { padding: 4px 8px; border: 1.5px solid var(--primary); border-radius: 6px; font-family: inherit; font-size: inherit; color: inherit; width: 100%; box-sizing: border-box; }
     .edit-row { display: flex; align-items: center; gap: 10px; width: 100%; }
-    .btn-save-inline { background: var(--success); color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+    
+    /* Avatar Edit Tooltip */
+    .avatar-edit-btn { 
+        position: absolute; bottom: 5px; right: 5px; 
+        background: var(--primary); color: white; 
+        width: 32px; height: 32px; border-radius: 50%; 
+        display: none; align-items: center; justify-content: center; 
+        cursor: pointer; border: 2px solid white; font-size: 12px;
+    }
 
     .user-main h2 { margin: 0; font-size: 26px; font-weight: 800; display: flex; align-items: center; }
     .status-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; padding: 4px 12px; border-radius: 999px; background: #ecfdf5; color: var(--success); font-weight: 600; border: 1px solid #d1fae5; }
@@ -66,11 +74,14 @@
               <img id="avatar-img">
               <span id="avatar-fallback"></span>
             </div>
+            <div id="avatar-edit-btn" class="avatar-edit-btn" onclick="editAvatar()">
+                <i class="fa-solid fa-camera"></i>
+            </div>
           </div>
           <div class="user-main">
             <h2>
                 <span id="username-text">Đang tải...</span>
-                <i class="fa-solid fa-pen edit-pen" onclick="toggleEditRow('username')"></i>
+                <i class="fa-solid fa-pen edit-pen" onclick="toggleEditRow('user_name')"></i>
             </h2>
             <div class="status-badge">
               <i class="fa-solid fa-circle-check"></i>
@@ -123,6 +134,26 @@
   </div>
 
 <script>
+/* ================= AUTO REFRESH FETCH ================= */
+async function apiFetch(url, options = {}) {
+  let res = await fetch(url, { ...options, credentials: 'include' });
+
+  if (res.status === 401) {
+    // access token hết hạn → xin token mới
+    const refresh = await fetch('/auth/refresh', {
+      method: 'POST',
+      credentials: 'include'
+    });
+
+    if (refresh.ok) {
+      // thử lại request ban đầu
+      res = await fetch(url, { ...options, credentials: 'include' });
+    }
+  }
+
+  return res;
+}
+/* ================= TẢI DỮ LIỆU NGƯỜI DÙNG ================= */
 let isEditingMode = false;
 let currentUserData = {};
 let pendingData = {};
@@ -173,12 +204,14 @@ window.handleMainAction = async () => {
   const btn = document.getElementById('edit-main-btn');
   const btnText = document.getElementById('btn-text');
   const pens = document.querySelectorAll('.edit-pen');
+  const avatarEditBtn = document.getElementById('avatar-edit-btn');
 
   if (!isEditingMode) {
     isEditingMode = true;
     btn.classList.add('btn-success');
     btnText.textContent = "Cập nhật tất cả";
     pens.forEach(p => p.style.display = 'inline-block');
+    avatarEditBtn.style.display = 'flex';
     return;
   }
 
@@ -213,7 +246,30 @@ function exitEditMode() {
   document.getElementById('edit-main-btn').classList.remove('btn-success');
   document.getElementById('btn-text').textContent = "Chỉnh sửa hồ sơ";
   document.querySelectorAll('.edit-pen').forEach(p => p.style.display = 'none');
+  document.getElementById('avatar-edit-btn').style.display = 'none';
 }
+
+/* ================= CHỈNH SỬA AVATAR ================= */
+
+window.editAvatar = () => {
+    const newUrl = prompt("Nhập URL ảnh đại diện mới:", currentUserData.avatar_url || "");
+    if (newUrl !== null && newUrl !== currentUserData.avatar_url) {
+        // Preview ngay lập tức
+        const avatarImg = document.getElementById('avatar-img');
+        const avatarFallback = document.getElementById('avatar-fallback');
+        
+        if(newUrl.trim() === "") {
+            avatarImg.style.display = 'none';
+            avatarFallback.style.display = 'block';
+        } else {
+            avatarImg.src = newUrl;
+            avatarImg.style.display = 'block';
+            avatarFallback.style.display = 'none';
+        }
+        
+        pendingData.avatar_url = newUrl.trim();
+    }
+};
 
 /* ================= CHỈNH SỬA TỪNG Ô ================= */
 
@@ -248,5 +304,5 @@ window.toggleEditRow = (field) => {
   });
 };
 </script>
-
-
+</body>
+</html>

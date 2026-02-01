@@ -1,4 +1,13 @@
-const userService = require('../services/userService')
+const userService = require('../services/userService');
+const getMe = async (req, res) => {
+  try {
+  const { id } = req.user;
+  const { user_name, avatar_url } = await userService.getMe(id);
+  return res.json({ id, user_name, avatar_url });
+  } catch (err) {
+    return res.status(400).json({ message: err.message });
+  }
+}
 const getInfo = async (req, res) => {
   try {
     const id = req.user.id;
@@ -12,9 +21,15 @@ const getInfo = async (req, res) => {
 const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { username, email, bio } = req.body;
 
-    await userService.updateUserProfile(userId, { username, email, bio });
+    const { user_name, email, bio, avatar_url } = req.body;
+
+    await userService.updateUserProfile(userId, {
+      user_name,
+      email,
+      bio,
+      avatar_url
+    });
 
     return res.json({ message: 'Cập nhật thông tin người dùng thành công' });
   } catch (err) {
@@ -22,4 +37,8 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-module.exports = {getInfo, updateUserProfile}
+module.exports = {
+  getMe,
+  getInfo,
+  updateUserProfile
+};

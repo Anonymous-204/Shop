@@ -7,7 +7,11 @@ module.exports = (req, res, next) => {
   try {
     req.user = jwt.verify(token, process.env.SECRET_KEY);
     next();
-  } catch {
-    res.sendStatus(403);
+  } catch (err) {
+  if (err.name === 'TokenExpiredError') {
+    return res.sendStatus(401);   // 👈 đổi từ 403 → 401
   }
+  return res.sendStatus(403);
+  }
+
 };
