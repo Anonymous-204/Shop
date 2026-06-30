@@ -54,9 +54,9 @@ const checkOut = async (userId) => {
 
     for (const item of cartItems) {
       await conn.query(`
-        INSERT INTO order_items (order_id, product_id, quantity, price)
-        VALUES (?, ?, ?, ?)
-      `, [orderId, item.product_id, item.quantity, item.price]);
+        INSERT INTO order_items (order_id, product_id, product_name, quantity, price)
+        VALUES (?, ?, ?, ?, ?)
+      `, [orderId, item.product_id, item.name, item.quantity, item.price]);
     }
 
     for (const item of cartItems) {
@@ -69,7 +69,7 @@ const checkOut = async (userId) => {
 
     await conn.query(`
       UPDATE carts
-      SET status = 'COMPLETED'
+      SET status = 'CHECKED_OUT'
       WHERE id = ?
     `, [cartId]);
 

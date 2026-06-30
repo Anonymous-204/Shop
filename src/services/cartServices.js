@@ -66,12 +66,11 @@ const deleteCartItemFromCart = async (userId, cartItemId) => {
 
 const checkStockByProductId = async (productId) =>{
   const [stock] = await db.query(`
-    SELECT stock FROM product
+    SELECT stock FROM products
     WHERE id=?`,[productId])
   if (stock.length===0) throw new Error('sản phầm không tồn tại');
   return stock[0].stock;
 }
-
 const updateCartItems = async (userId,items) =>{
   const result = []
   for (const item of items) {
@@ -216,7 +215,7 @@ const clearCart = async (userId) => {
 
     if (!cart) {
       await conn.commit();
-      return res.json({ success: true });
+      return;
     }
 
     // 2. Xóa toàn bộ item
@@ -232,7 +231,7 @@ const clearCart = async (userId) => {
     );
 
     await conn.commit();
-    res.json({ success: true });
+    return true;
 
   } catch (err) {
     await conn.rollback();
